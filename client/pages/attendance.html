@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-r from-yellow-400 to-orange-500 min-h-screen flex justify-center items-center">
+
+<div class="bg-white p-8 rounded-xl w-96 shadow-lg">
+
+<h2 class="text-xl font-bold mb-4 text-center">Mark Attendance</h2>
+
+<input id="studentName" placeholder="Student Name" class="w-full p-2 border mb-2">
+<input id="date" type="date" class="w-full p-2 border mb-2">
+
+<select id="status" class="w-full p-2 border mb-2">
+<option value="Present">Present</option>
+<option value="Absent">Absent</option>
+</select>
+
+<button onclick="addAttendance()" class="bg-yellow-500 text-white w-full p-2 rounded">
+Add Attendance
+</button>
+
+<h3 class="mt-5 font-bold">All Attendance</h3>
+<ul id="list"></ul>
+
+</div>
+
+<script>
+const list = document.getElementById("list");
+
+function addAttendance() {
+    const studentName = document.getElementById("studentName").value;
+    const date = document.getElementById("date").value;
+    const status = document.getElementById("status").value;
+
+    fetch("http://localhost:5000/attendance/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ studentName, date, status }) // ✅ correct keys
+    })
+    .then(res => res.json())
+    .then(() => loadAttendance());
+}
+
+function loadAttendance() {
+    fetch("http://localhost:5000/attendance")
+    .then(res => res.json())
+    .then(data => {
+        list.innerHTML = "";
+        data.forEach(a => {
+            list.innerHTML += `<li>${a.studentName} | ${a.date} | ${a.status}</li>`;
+        });
+    });
+}
+
+loadAttendance();
+</script>
+
+</body>
+</html>

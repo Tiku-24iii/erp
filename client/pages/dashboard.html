@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teacher Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-gradient-to-r from-purple-500 to-pink-500 min-h-screen p-6">
+
+<h1 class="text-white text-4xl mb-6 font-bold text-center">
+👨‍🏫 Teacher Dashboard
+</h1>
+
+<!-- CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="bg-white p-4 rounded shadow">Students: <span id="students">0</span></div>
+<div class="bg-white p-4 rounded shadow">Exams: <span id="exams">0</span></div>
+<div class="bg-white p-4 rounded shadow">Pass %: <span id="pass">0%</span></div>
+<div class="bg-white p-4 rounded shadow">Attendance %: <span id="attendance">0%</span></div>
+</div>
+
+<!-- NAV -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+<a href="exam.html" class="bg-white p-5 rounded shadow text-center">Exams</a>
+<a href="result.html" class="bg-white p-5 rounded shadow text-center">Results</a>
+<a href="attendance.html" class="bg-white p-5 rounded shadow text-center">Attendance</a>
+<a href="report.html" class="bg-white p-5 rounded shadow text-center">Reports</a>
+</div>
+
+<!-- CHART -->
+<div class="bg-white p-4 rounded shadow mb-6">
+<h2 class="text-xl mb-3 font-semibold">Result Chart</h2>
+<canvas id="chart"></canvas>
+</div>
+
+<!-- EXAM TABLE -->
+<div class="bg-white p-4 rounded shadow mb-6">
+<h2 class="text-xl mb-3 font-semibold">Exam Timetable</h2>
+<table class="w-full border">
+<thead>
+<tr class="bg-gray-200">
+<th class="p-2 border">Exam</th>
+<th class="p-2 border">Subject</th>
+<th class="p-2 border">Class</th>
+<th class="p-2 border">Date</th>
+<th class="p-2 border">Time</th>
+</tr>
+</thead>
+<tbody id="examTable"></tbody>
+</table>
+</div>
+
+<!-- RESULTS TABLE -->
+<div class="bg-white p-4 rounded shadow">
+<h2 class="text-xl mb-3 font-semibold">Recent Results</h2>
+
+<table class="w-full border">
+<thead>
+<tr class="bg-gray-200">
+<th class="p-2 border">Student</th>
+<th class="p-2 border">Class</th>
+<th class="p-2 border">Roll</th>
+<th class="p-2 border">Exam</th>
+<th class="p-2 border">Marks</th>
+<th class="p-2 border">Status</th>
+</tr>
+</thead>
+<tbody id="tableData"></tbody>
+</table>
+</div>
+
+<script>
+
+// RESULTS
+fetch("http://localhost:5000/results")
+.then(r=>r.json())
+.then(d=>{
+
+  document.getElementById("students").innerText = d.length;
+
+  let pass = d.filter(x=>x.status==="Pass").length;
+  let fail = d.length - pass;
+
+  document.getElementById("pass").innerText =
+    (d.length ? (pass/d.length*100) : 0).toFixed(2)+"%";
+
+  let html="";
+  d.slice(-5).reverse().forEach(x=>{
+    html += `
+    <tr>
+      <td class="border p-2">${x.studentName}</td>
+      <td class="border p-2">${x.className || "-"}</td>
+      <td class="border p-2">${x.rollNo || "-"}</td>
+      <td class="border p-2">${x.subject}</td>
+      <td class="border p-2">${x.marks}</td>
+      <td class="border p-2">${x.status}</td>
+    </tr>`;
+  });
+
+  document.getElementById("tableData").innerHTML = html;
+
+  new Chart(document.getElementById("chart"), {
+    type: "pie",
+    data: {
+      labels: ["Pass", "Fail"],
+      datasets: [{
+        data: [pass, fail],
+        backgroundColor: ["green", "red"]
+      }]
+    }
+  });
+
+});
+
+// EXAMS
+fetch("http://localhost:5000/exams")
+.then(r=>r.json())
+.then(d=>{
+  document.getElementById("exams").innerText = d.length;
+
+  let html="";
+  d.forEach(e=>{
+    html += `
+    <tr>
+      <td class="border p-2">${e.name}</td>
+      <td class="border p-2">${e.subject}</td>
+      <td class="border p-2">${e.className || "-"}</td>
+      <td class="border p-2">${e.date}</td>
+      <td class="border p-2">${e.time || "-"}</td>
+    </tr>`;
+  });
+
+  document.getElementById("examTable").innerHTML = html;
+});
+
+// ATTENDANCE
+fetch("http://localhost:5000/attendance")
+.then(r=>r.json())
+.then(d=>{
+  let present = d.filter(x=>x.status==="Present").length;
+
+  document.getElementById("attendance").innerText =
+    (d.length ? (present/d.length*100) : 0).toFixed(2)+"%";
+});
+
+</script>
+
+</body>
+</html>

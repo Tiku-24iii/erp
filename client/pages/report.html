@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Card</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500">
+
+<div class="max-w-md w-full mx-auto bg-white p-6 rounded-2xl shadow-2xl text-center">
+
+<h2 class="text-2xl font-bold mb-4">Student Report</h2>
+
+<input id="search" placeholder="Enter Name"
+class="w-full p-2 border rounded mb-3">
+
+<button onclick="generate()"
+class="w-full bg-green-500 text-white p-2 rounded mb-2">
+Generate
+</button>
+
+<button onclick="downloadPDF()"
+class="w-full bg-red-500 text-white p-2 rounded">
+Download PDF
+</button>
+
+<div id="report" class="mt-4"></div>
+
+</div>
+
+<script>
+
+function generate() {
+    let name = document.getElementById("search").value.trim();
+
+    fetch("http://localhost:5000/results")
+    .then(res => res.json())
+    .then(data => {
+
+        let students = data.filter(r => r.studentName.toLowerCase() === name.toLowerCase());
+
+        if (students.length === 0) {
+            document.getElementById("report").innerHTML =
+            `<p class="text-red-500">No Data Found</p>`;
+            return;
+        }
+
+        let total = 0;
+
+        let html = `
+        <div id="pdfContent" class="bg-white p-5 rounded shadow text-left">
+
+        <h2 class="text-xl font-bold text-center mb-4 border-b pb-2">
+        Student Report Card
+        </h2>
+
+        <p><b>Name:</b> ${name}</p>
+
+        <table class="w-full mt-3 border text-center">
+            <tr class="bg-gray-200">
+                <th class="p-2 border">Subject</th>
+                <th class="p-2 border">Marks</th>
+                <th class="p-2 border">Result</th>
+                <th class="p-2 border">Grade</th>
+            </tr>
+        `;
+
+        students.forEach(s => {
+            total += Number(s.marks);
+
+            html += `
+            <tr>
+                <td class="p-2 border">${s.subject}</td>
+                <td class="p-2 border">${s.marks}</td>
+                <td class="p-2 border ${s.status === "Pass" ? "text-green-600" : "text-red-600"}">
+                    ${s.status}
+                </td>
+                <td class="p-2 border font-bold">${s.grade}</td>
+            </tr>
+            `;
+        });
+
+        let percentage = (total / students.length).toFixed(2);
+
+        html += `
+        </table>
+
+        <div class="mt-4 p-3 bg-gray-100 rounded">
+            <p><b>Total:</b> ${total}</p>
+            <p><b>Percentage:</b> ${percentage}%</p>
+        </div>
+
+        </div>
+        `;
+
+        document.getElementById("report").innerHTML = html;
+    });
+}
+
+function downloadPDF() {
+    let element = document.getElementById("pdfContent");
+
+    if (!element) {
+        alert("Generate report first!");
+        return;
+    }
+
+    let opt = {
+        margin: 0.5,
+        filename: 'ReportCard.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+}
+
+</script>
+
+</body>
+</html>
